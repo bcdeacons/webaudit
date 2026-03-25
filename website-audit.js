@@ -819,14 +819,15 @@
 
   function runAuditOnDoc(doc, url, isRemote) {
     var results = {
-      seo:           auditSEO(doc),
-      performance:   auditPerformance(doc, isRemote),
-      accessibility: auditAccessibility(doc),
-      security:      auditSecurity(doc, url),
-      keywords:      auditKeywords(doc),
-    };
-    renderResults(results, url, isRemote);
-  }
+  seo: auditSEO(doc),
+  accessibility: auditAccessibility(doc),
+  security: auditSecurity(doc, url),
+  keywords: auditKeywords(doc),
+};
+
+if (!isRemote) {
+  results.performance = auditPerformance(doc, isRemote);
+}
 
   function showError(msg) {
     var body = document.getElementById('wa-body');
