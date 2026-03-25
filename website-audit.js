@@ -631,11 +631,11 @@
       var w = allWords[j];
       uni[w] = (uni[w] || 0) + 1;
       if (j + 1 < allWords.length) {
-        var b = w + ' ' + allWords[j + 1];
+        var b = (w + ' ' + allWords[j + 1]).trim();
         bi[b] = (bi[b] || 0) + 1;
       }
       if (j + 2 < allWords.length) {
-        var t = w + ' ' + allWords[j + 1] + ' ' + allWords[j + 2];
+        var t = (w + ' ' + allWords[j + 1] + ' ' + allWords[j + 2]).trim();
         tri[t] = (tri[t] || 0) + 1;
       }
     }
