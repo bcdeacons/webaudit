@@ -607,7 +607,7 @@
       '</div>',
       '<div id="wa-url-bar">',
         '<label for="wa-url-input">URL to audit</label>',
-        '<input type="url" id="wa-url-input" placeholder="Add website URL (e.g. nike.com)" autocomplete="off">',
+        '<input type="url" id="wa-url-input" placeholder="Add website URL" autocomplete="off">',
       '</div>',
       '<div id="wa-score-bar">',
         '<div class="wa-score-circle neutral" id="wa-overall-score">?</div>',
