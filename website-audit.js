@@ -28,7 +28,6 @@
       'display:flex;align-items:center;justify-content:space-between;flex-shrink:0;',
     '}',
     '#wa-header h2{margin:0;font-size:15px;font-weight:700;letter-spacing:-.2px}',
-    '#wa-header span{font-size:12px;opacity:.75;margin-left:8px;font-weight:400}',
     '#wa-close{',
       'background:none;border:none;color:#fff;cursor:pointer;',
       'font-size:20px;line-height:1;padding:0 0 0 8px;opacity:.75;',
@@ -116,7 +115,7 @@
     '.wa-kw-bar-wrap{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden}',
     '.wa-kw-bar{height:100%;border-radius:3px;transition:width .4s ease}',
     '.wa-kw-count{color:#94a3b8;font-size:11px;min-width:22px;text-align:right}',
-    '#wa-footer{',
+    '#wa-panel-footer{',
       'padding:9px 18px;border-top:1px solid #e2e8f0;',
       'font-size:10.5px;color:#94a3b8;text-align:center;flex-shrink:0;',
     '}',
@@ -138,7 +137,7 @@
     return function check(label, pass, warn, detail, weight) {
       weight = weight || 10;
       pointsRef.total += weight;
-      if (pass)      pointsRef.earned += weight;
+      if (pass) pointsRef.earned += weight;
       else if (warn) pointsRef.earned += weight / 2;
       checks.push({
         pass: pass ? 'pass' : warn ? 'warn' : 'fail',
@@ -191,7 +190,10 @@
     var prevLevel = 0;
     for (var i = 0; i < headings.length; i++) {
       var level = parseInt(headings[i].tagName[1], 10);
-      if (prevLevel && level > prevLevel + 1) { hierarchyOk = false; break; }
+      if (prevLevel && level > prevLevel + 1) {
+        hierarchyOk = false;
+        break;
+      }
       prevLevel = level;
     }
     check(
@@ -204,12 +206,12 @@
     );
 
     var ogTitle = doc.querySelector('meta[property="og:title"]');
-    var ogDesc  = doc.querySelector('meta[property="og:description"]');
+    var ogDesc = doc.querySelector('meta[property="og:description"]');
     var ogImage = doc.querySelector('meta[property="og:image"]');
     var ogCount = [ogTitle, ogDesc, ogImage].filter(Boolean).length;
     var missing = [];
     if (!ogTitle) missing.push('og:title');
-    if (!ogDesc)  missing.push('og:description');
+    if (!ogDesc) missing.push('og:description');
     if (!ogImage) missing.push('og:image');
     check(
       'Open Graph tags',
@@ -282,121 +284,6 @@
     return { score: Math.round((pts.earned / pts.total) * 100), checks: checks };
   }
 
-  function auditPerformance(doc, isRemote) {
-    var checks = [];
-    var pts = { earned: 0, total: 0 };
-    var check = makeChecker(checks, pts);
-
-    var allImgs = doc.querySelectorAll('img');
-    var lazyImgs = Array.from(allImgs).filter(function (img) {
-      return img.getAttribute('loading') === 'lazy';
-    });
-    check(
-      'Lazy loading images',
-      allImgs.length === 0 || lazyImgs.length >= allImgs.length - 1,
-      lazyImgs.length > 0,
-      allImgs.length === 0
-        ? 'No images on page'
-        : lazyImgs.length + '/' + allImgs.length + ' images use loading="lazy" (skip first/hero image)'
-    );
-
-    var extScripts = doc.querySelectorAll('script[src]');
-    var syncScripts = Array.from(extScripts).filter(function (s) {
-      return !s.async && !s.defer;
-    });
-    check(
-      'Non-blocking scripts',
-      syncScripts.length === 0,
-      syncScripts.length <= 2,
-      syncScripts.length === 0
-        ? 'All external scripts use async or defer'
-        : syncScripts.length + ' render-blocking script(s) \u2014 add async or defer attribute'
-    );
-
-    var domCount = doc.querySelectorAll('*').length;
-    check(
-      'DOM size',
-      domCount < 800,
-      domCount < 1500,
-      domCount + ' DOM elements (ideal < 800, critical > 1500)'
-    );
-
-    var inlineStyles = doc.querySelectorAll('[style]');
-    check(
-      'Inline styles',
-      inlineStyles.length < 10,
-      inlineStyles.length < 50,
-      inlineStyles.length === 0
-        ? 'No inline styles'
-        : inlineStyles.length + ' element(s) with inline style attributes \u2014 prefer CSS classes',
-      6
-    );
-
-    var iframes = doc.querySelectorAll('iframe');
-    var lazyIframes = Array.from(iframes).filter(function (f) {
-      return f.getAttribute('loading') === 'lazy';
-    });
-    check(
-      'Lazy loading iframes',
-      iframes.length === 0 || lazyIframes.length === iframes.length,
-      iframes.length > 0 && lazyIframes.length > 0,
-      iframes.length === 0
-        ? 'No iframes found'
-        : lazyIframes.length + '/' + iframes.length + ' iframes use loading="lazy"'
-    );
-
-    var imgsNoDims = Array.from(allImgs).filter(function (img) {
-      return !img.getAttribute('width') && !img.getAttribute('height');
-    });
-    check(
-      'Image dimensions specified',
-      imgsNoDims.length === 0,
-      allImgs.length > 0 && imgsNoDims.length <= allImgs.length / 2,
-      allImgs.length === 0
-        ? 'No images'
-        : imgsNoDims.length === 0
-          ? 'All images have width/height attributes (prevents layout shift)'
-          : imgsNoDims.length + ' image(s) missing width/height \u2014 causes CLS (Cumulative Layout Shift)'
-    );
-
-    if (!isRemote) {
-      var nav = window.performance &&
-        window.performance.getEntriesByType &&
-        window.performance.getEntriesByType('navigation')[0];
-      if (nav) {
-        var ttfb = Math.round(nav.responseStart - nav.requestStart);
-        check(
-          'Time to First Byte (TTFB)',
-          ttfb < 200,
-          ttfb < 600,
-          ttfb + 'ms (ideal < 200ms, warning > 600ms)'
-        );
-
-        var dcl = Math.round(nav.domContentLoadedEventEnd - nav.startTime);
-        check(
-          'DOMContentLoaded time',
-          dcl < 1000,
-          dcl < 2500,
-          dcl + 'ms (ideal < 1000ms)'
-        );
-
-        var transferSize = nav.transferSize;
-        if (transferSize) {
-          var sizeKB = Math.round(transferSize / 1024);
-          check(
-            'Page transfer size',
-            sizeKB < 500,
-            sizeKB < 1500,
-            sizeKB + ' KB HTML transfer size (ideal < 500 KB)',
-            8
-          );
-        }
-      }
-    }
-
-    return { score: Math.round((pts.earned / pts.total) * 100), checks: checks };
-  }
-
   function auditAccessibility(doc) {
     var checks = [];
     var pts = { earned: 0, total: 0 };
@@ -464,7 +351,7 @@
     );
 
     var hasMain = !!(doc.querySelector('main') || doc.querySelector('[role="main"]'));
-    var hasNav  = !!(doc.querySelector('nav') || doc.querySelector('[role="navigation"]'));
+    var hasNav = !!(doc.querySelector('nav') || doc.querySelector('[role="navigation"]'));
     check(
       'Landmark regions (main & nav)',
       hasMain && hasNav,
@@ -612,16 +499,22 @@
     ).split(' '));
 
     var body = doc.body;
-    if (!body) return { score: null, checks: [{ pass: 'warn', label: 'Content', detail: 'No body content to analyze' }], keywords: [], phrases: [], maxCount: 1 };
+    if (!body) {
+      return { score: null, checks: [{ pass: 'warn', label: 'Content', detail: 'No body content to analyze' }], keywords: [], phrases: [], maxCount: 1 };
+    }
 
     var clone = body.cloneNode(true);
     var remove = clone.querySelectorAll('script,style,noscript,#wa-panel,#wa-btn');
-    for (var i = 0; i < remove.length; i++) remove[i].parentNode.removeChild(remove[i]);
+    for (var i = 0; i < remove.length; i++) {
+      remove[i].parentNode.removeChild(remove[i]);
+    }
+
     var rawText = (clone.innerText || clone.textContent || '').toLowerCase();
     var text = rawText
-  .replace(/[^a-z0-9\s\-']/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim();
+      .replace(/[^a-z0-9\s\-']/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     var allWords = text.split(/\s+/).filter(function (w) {
       return w.length > 2 && !STOP.has(w) && !/^\d+$/.test(w) && !/^[-']+$/.test(w);
     });
@@ -648,17 +541,17 @@
         .slice(0, n);
     }
 
-    var topWords    = topN(uni, 10, 2);
-    var topBigrams  = topN(bi, 5, 2);
+    var topWords = topN(uni, 10, 2);
+    var topBigrams = topN(bi, 5, 2);
     var topTrigrams = topN(tri, 3, 2);
 
     var titleText = (doc.title || '').toLowerCase();
-    var descEl    = doc.querySelector('meta[name="description"]');
-    var descText  = descEl ? (descEl.getAttribute('content') || '').toLowerCase() : '';
+    var descEl = doc.querySelector('meta[name="description"]');
+    var descText = descEl ? (descEl.getAttribute('content') || '').toLowerCase() : '';
 
-    var top3    = topWords.slice(0, 3).map(function (e) { return e[0]; });
+    var top3 = topWords.slice(0, 3).map(function (e) { return e[0]; });
     var inTitle = top3.filter(function (k) { return titleText.includes(k); });
-    var inDesc  = top3.filter(function (k) { return descText.includes(k); });
+    var inDesc = top3.filter(function (k) { return descText.includes(k); });
 
     var checks = [];
     checks.push({
@@ -691,7 +584,6 @@
     };
   }
 
-  // Expose open function globally so shortcode buttons can trigger the panel
   window.waOpenPanel = function () {
     var panel = document.getElementById('wa-panel');
     if (panel) panel.classList.add('wa-open');
@@ -715,13 +607,13 @@
       '</div>',
       '<div id="wa-url-bar">',
         '<label for="wa-url-input">URL to audit</label>',
-        '<input type="url" id="wa-url-input" placeholder="https://example.com" autocomplete="off">',
+        '<input type="url" id="wa-url-input" placeholder="Add website URL (e.g. nike.com)" autocomplete="off">',
       '</div>',
       '<div id="wa-score-bar">',
         '<div class="wa-score-circle neutral" id="wa-overall-score">?</div>',
         '<div class="wa-overall-info">',
           '<strong id="wa-overall-label">Ready to audit</strong>',
-          '<span id="wa-overall-sub">Enter a URL above and click Run Audit</span>',
+          '<span id="wa-overall-sub">Enter a website URL to analyze and click Run Audit</span>',
         '</div>',
         '<button id="wa-run-btn">Run Audit</button>',
       '</div>',
@@ -729,25 +621,28 @@
         '<div id="wa-placeholder" style="padding:48px 20px;text-align:center;color:#94a3b8">',
           '<div style="font-size:40px;margin-bottom:14px">&#128269;</div>',
           '<div style="font-weight:700;font-size:14px;color:#475569;margin-bottom:6px">No results yet</div>',
-          '<div style="font-size:12px;line-height:1.6">Enter any URL or use the current page,<br>then click <strong>Run Audit</strong>.</div>',
+          '<div style="font-size:12px;line-height:1.6">Enter a website URL to analyze,<br>then click <strong>Run Audit</strong>.</div>',
         '</div>',
       '</div>',
-      '<div id="wa-footer">Website Audit &bull; Analyzes SEO, Performance, Accessibility, Security &amp; Keywords</div>',
+      '<div id="wa-panel-footer">Website Audit &bull; Analyzes SEO, Accessibility, Security &amp; Keywords</div>',
     ].join('');
     document.body.appendChild(panel);
 
-    // Default URL to current page
-    document.getElementById('wa-url-input').value = window.location.href;
+    document.getElementById('wa-url-input').value = '';
 
-    document.getElementById('wa-close').addEventListener('click', function () { panel.classList.remove('wa-open'); });
+    document.getElementById('wa-close').addEventListener('click', function () {
+      panel.classList.remove('wa-open');
+    });
+
     document.getElementById('wa-run-btn').addEventListener('click', onRunAudit);
+
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') panel.classList.remove('wa-open');
     });
   }
 
   function normalizeUrl(url) {
-    url = url.trim();
+    url = (url || '').trim();
     if (url && url.indexOf('http') !== 0) url = 'https://' + url;
     return url;
   }
@@ -765,18 +660,25 @@
   function onRunAudit() {
     var runBtn = document.getElementById('wa-run-btn');
     var urlInput = document.getElementById('wa-url-input');
-    var inputUrl = normalizeUrl(urlInput ? urlInput.value : window.location.href);
+    var inputUrl = normalizeUrl(urlInput ? urlInput.value : '');
 
     runBtn.disabled = true;
     runBtn.innerHTML = '<span class="wa-spinner"></span>Auditing\u2026';
 
-    if (!inputUrl || isSameOrigin(inputUrl)) {
-      // Audit current page DOM directly
+    if (!inputUrl) {
+      showError('Please enter a website URL to audit.');
+      runBtn.disabled = false;
+      runBtn.textContent = 'Run Audit';
+      return;
+    }
+
+    if (isSameOrigin(inputUrl)) {
       setTimeout(function () {
         try {
           runAuditOnDoc(document, window.location.href, false);
         } catch (err) {
           console.error('[WebsiteAudit]', err);
+          showError('Audit failed: ' + err.message);
         }
         runBtn.disabled = false;
         runBtn.textContent = 'Re-run Audit';
@@ -818,19 +720,16 @@
   }
 
   function runAuditOnDoc(doc, url, isRemote) {
-  var results = {
-    seo: auditSEO(doc),
-    accessibility: auditAccessibility(doc),
-    security: auditSecurity(doc, url),
-    keywords: auditKeywords(doc),
-  };
+    var results = {
+      seo: auditSEO(doc),
+      accessibility: auditAccessibility(doc),
+      security: auditSecurity(doc, url),
+      keywords: auditKeywords(doc),
+    };
 
-  if (!isRemote) {
-    results.performance = auditPerformance(doc, isRemote);
+    renderResults(results, url, isRemote);
   }
 
-  renderResults(results, url, isRemote);
-}
   function showError(msg) {
     var body = document.getElementById('wa-body');
     if (body) {
@@ -842,19 +741,11 @@
 
   function renderResults(results, auditedUrl, isRemote) {
     var sections = [
-  { key: 'seo', label: 'SEO', icon: '🔍' },
-  { key: 'accessibility', label: 'Accessibility', icon: '♿️' },
-  { key: 'security', label: 'Security', icon: '🔒' },
-  { key: 'keywords', label: 'Keywords', icon: '🏷️' },
-];
-
-if (results.performance) {
-  sections.splice(1, 0, {
-    key: 'performance',
-    label: 'Performance',
-    icon: '⚡'
-  });
-}
+      { key: 'seo', label: 'SEO', icon: '🔍' },
+      { key: 'accessibility', label: 'Accessibility', icon: '♿️' },
+      { key: 'security', label: 'Security', icon: '🔒' },
+      { key: 'keywords', label: 'Keywords', icon: '🏷️' },
+    ];
 
     var scoredSections = sections.filter(function (s) { return results[s.key].score !== null; });
     var totalScore = scoredSections.reduce(function (sum, s) { return sum + results[s.key].score; }, 0);
@@ -874,7 +765,7 @@ if (results.performance) {
     document.getElementById('wa-overall-sub').textContent =
       passed + ' passed \u00b7 ' + warned + ' warnings \u00b7 ' + failed + ' failed';
 
-    var footer = document.getElementById('wa-footer');
+    var footer = document.getElementById('wa-panel-footer');
     if (footer && auditedUrl) {
       var shortUrl = auditedUrl.replace(/^https?:\/\//, '').slice(0, 50);
       footer.textContent = 'Audited: ' + shortUrl + (isRemote ? ' (remote)' : '');
@@ -964,7 +855,10 @@ if (results.performance) {
 
   function init() {
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function () { buildUI(); bindShortcodeButtons(); });
+      document.addEventListener('DOMContentLoaded', function () {
+        buildUI();
+        bindShortcodeButtons();
+      });
     } else {
       buildUI();
       bindShortcodeButtons();
@@ -974,4 +868,3 @@ if (results.performance) {
   init();
 
 }(window, document));
-
