@@ -618,7 +618,10 @@
     var remove = clone.querySelectorAll('script,style,noscript,#wa-panel,#wa-btn');
     for (var i = 0; i < remove.length; i++) remove[i].parentNode.removeChild(remove[i]);
     var rawText = (clone.innerText || clone.textContent || '').toLowerCase();
-    var text = rawText.replace(/[^a-z0-9\s\-']/g, ' ');
+    var text = rawText
+  .replace(/[^a-z0-9\s\-']/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
     var allWords = text.split(/\s+/).filter(function (w) {
       return w.length > 2 && !STOP.has(w) && !/^\d+$/.test(w) && !/^[-']+$/.test(w);
     });
