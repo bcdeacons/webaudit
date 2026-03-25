@@ -818,17 +818,19 @@
   }
 
   function runAuditOnDoc(doc, url, isRemote) {
-    var results = {
-  seo: auditSEO(doc),
-  accessibility: auditAccessibility(doc),
-  security: auditSecurity(doc, url),
-  keywords: auditKeywords(doc),
-};
+  var results = {
+    seo: auditSEO(doc),
+    accessibility: auditAccessibility(doc),
+    security: auditSecurity(doc, url),
+    keywords: auditKeywords(doc),
+  };
 
-if (!isRemote) {
-  results.performance = auditPerformance(doc, isRemote);
+  if (!isRemote) {
+    results.performance = auditPerformance(doc, isRemote);
+  }
+
+  renderResults(results, url, isRemote);
 }
-
   function showError(msg) {
     var body = document.getElementById('wa-body');
     if (body) {
