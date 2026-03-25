@@ -840,12 +840,19 @@ if (!isRemote) {
 
   function renderResults(results, auditedUrl, isRemote) {
     var sections = [
-      { key: 'seo',           label: 'SEO',           icon: '&#128269;' },
-      { key: 'performance',   label: 'Performance',   icon: '&#9889;' },
-      { key: 'accessibility', label: 'Accessibility', icon: '&#9855;&#65039;' },
-      { key: 'security',      label: 'Security',      icon: '&#128274;' },
-      { key: 'keywords',      label: 'Keywords',      icon: '&#127991;&#65039;' },
-    ];
+  { key: 'seo', label: 'SEO', icon: '🔍' },
+  { key: 'accessibility', label: 'Accessibility', icon: '♿️' },
+  { key: 'security', label: 'Security', icon: '🔒' },
+  { key: 'keywords', label: 'Keywords', icon: '🏷️' },
+];
+
+if (results.performance) {
+  sections.splice(1, 0, {
+    key: 'performance',
+    label: 'Performance',
+    icon: '⚡'
+  });
+}
 
     var scoredSections = sections.filter(function (s) { return results[s.key].score !== null; });
     var totalScore = scoredSections.reduce(function (sum, s) { return sum + results[s.key].score; }, 0);
